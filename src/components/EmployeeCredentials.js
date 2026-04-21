@@ -11,7 +11,6 @@ import {
   Chip,
   Button,
   Paper,
-  useMediaQuery,
   useTheme
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -277,7 +276,6 @@ const EmployeeCredentials = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
 
   // State
   const [employeeData, setEmployeeData] = useState(null);

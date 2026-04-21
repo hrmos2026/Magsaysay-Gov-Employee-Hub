@@ -21,7 +21,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Breadcrumbs,
   Button
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -38,19 +37,51 @@ const EmployeeList = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // State declarations
   const [employees, setEmployees] = useState([]);
   const [office, setOffice] = useState(null);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
   const officeName = location.state?.officeName || 'Office';
 
+  // Fetch employees function
+  const fetchEmployees = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [employeesData, officeData] = await Promise.all([
+        googleSheets.getEmployeesByOffice(officeId),
+        googleSheets.getOfficeDetails(officeId)
+      ]);
+      setEmployees(employeesData || []);
+      setOffice(officeData || null);
+      setFilteredEmployees(employeesData || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      setError('Failed to load employees. Please make sure your Google Sheet is public.');
+      setEmployees([]);
+      setFilteredEmployees([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [officeId]);
+
+  // Initial load
   useEffect(() => {
     fetchEmployees();
-  }, [officeId, fetchEmployees]);
+  }, [fetchEmployees]);
 
+  // Filter employees when search term changes
   useEffect(() => {
+    if (!employees.length) {
+      setFilteredEmployees([]);
+      return;
+    }
+    
     const filtered = employees.filter(employee =>
       employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,25 +90,8 @@ const EmployeeList = () => {
     setFilteredEmployees(filtered);
   }, [searchTerm, employees]);
 
-  const fetchEmployees = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [employeesData, officeData] = await Promise.all([
-        googleSheets.getEmployeesByOffice(officeId),
-        googleSheets.getOfficeDetails(officeId)
-      ]);
-      setEmployees(employeesData);
-      setOffice(officeData);
-      setFilteredEmployees(employeesData);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load employees. Please make sure your Google Sheet is public.');
-    } finally {
-      setLoading(false);
-    }
-  }, [officeId]);
-
   const handleViewEmployee = (employeeId) => {
+    if (!employeeId) return;
     navigate(`/employee/${employeeId}`, { 
       state: { 
         officeId: officeId,
@@ -87,6 +101,7 @@ const EmployeeList = () => {
     });
   };
 
+  // Loading state
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -97,10 +112,11 @@ const EmployeeList = () => {
 
   return (
     <Box>
+      {/* Header Paper */}
       <Paper variant="outlined" sx={{ mb: 4, p: 3, borderRadius: 3, bgcolor: 'white', borderColor: 'rgba(15,31,71,0.12)' }}>
-        <Breadcrumbs separator="" sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, '.MuiBreadcrumbs-ol': { alignItems: 'center' } }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
           <Button
-            onClick={(e) => { e.preventDefault(); navigate('/'); }}
+            onClick={() => navigate('/')}
             startIcon={<HomeIcon />}
             sx={{
               minHeight: '30px',
@@ -124,7 +140,6 @@ const EmployeeList = () => {
               minHeight: '30px',
               px: 1.5,
               py: 0.4,
-              ml: -1,
               backgroundColor: '#000f57',
               color: 'white',
               border: '1px solid #000f57',
@@ -137,7 +152,7 @@ const EmployeeList = () => {
           >
             {office?.office_code || officeName}
           </Button>
-        </Breadcrumbs>
+        </Box>
 
         {office && (
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
@@ -161,15 +176,16 @@ const EmployeeList = () => {
                 label={`${employees.length} ${employees.length === 1 ? 'employee' : 'employees'}`}
                 size="small"
                 sx={{ 
-                    backgroundColor: '#000f57',
-                    color: 'white',
-                  }}
+                  backgroundColor: '#000f57',
+                  color: 'white',
+                }}
               />
             </Box>
           </Box>
         )}
       </Paper>
 
+      {/* Search */}
       <TextField
         fullWidth
         variant="outlined"
@@ -191,7 +207,7 @@ const EmployeeList = () => {
       {filteredEmployees.length === 0 ? (
         <Alert severity="info">No employees found in this office.</Alert>
       ) : isMobile ? (
-        // Mobile View - Entire Card Clickable
+        // Mobile View
         <Grid container spacing={2}>
           {filteredEmployees.map((employee) => (
             <Grid item xs={12} key={employee.employee_id}>
@@ -222,7 +238,7 @@ const EmployeeList = () => {
                     <IconButton
                       color="default"
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevents card click from firing twice
+                        e.stopPropagation();
                         handleViewEmployee(employee.employee_id);
                       }}
                       size="small"
@@ -246,7 +262,7 @@ const EmployeeList = () => {
           ))}
         </Grid>
       ) : (
-        // Desktop View - Entire Row Clickable
+        // Desktop View
         <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 650 }}>
             <TableHead sx={{ bgcolor: '#f5f5f5' }}>
@@ -286,12 +302,11 @@ const EmployeeList = () => {
                   <TableCell>{employee.position || 'N/A'}</TableCell>
                   <TableCell>{employee.email || 'N/A'}</TableCell>
                   <TableCell>{employee.phone || 'N/A'}</TableCell>
-                  
                   <TableCell align="center">
                     <IconButton
                       color="default"
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevents row click from firing twice
+                        e.stopPropagation();
                         handleViewEmployee(employee.employee_id);
                       }}
                       size="small"

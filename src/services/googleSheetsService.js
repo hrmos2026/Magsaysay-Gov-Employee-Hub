@@ -20,8 +20,6 @@ class GoogleSheetsService {
       // ✅ CORRECT URL - Using the CSV export endpoint
       const url = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
       
-      console.log(`Fetching ${sheetName} from:`, url);
-      
       const response = await axios.get(url);
       const csvData = response.data;
       
