@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   useTheme,
@@ -22,7 +22,6 @@ import {
   CardContent,
   Grid,
   Breadcrumbs,
-  Link,
   Button
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -49,7 +48,7 @@ const EmployeeList = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [officeId]);
+  }, [officeId, fetchEmployees]);
 
   useEffect(() => {
     const filtered = employees.filter(employee =>
@@ -60,7 +59,7 @@ const EmployeeList = () => {
     setFilteredEmployees(filtered);
   }, [searchTerm, employees]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       const [employeesData, officeData] = await Promise.all([
@@ -76,7 +75,7 @@ const EmployeeList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [officeId]);
 
   const handleViewEmployee = (employeeId) => {
     navigate(`/employee/${employeeId}`, { 

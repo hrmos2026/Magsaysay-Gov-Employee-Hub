@@ -10,7 +10,6 @@ import {
   InputAdornment,
   Chip,
   Container,
-  Avatar,
   Tooltip,
   Button
 } from '@mui/material';

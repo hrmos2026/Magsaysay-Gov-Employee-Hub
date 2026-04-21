@@ -9,7 +9,6 @@ import {
   Alert,
   Box,
   Chip,
-  Avatar,
   Button,
   Paper,
   useMediaQuery,
@@ -279,7 +278,6 @@ const EmployeeCredentials = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // State
   const [employeeData, setEmployeeData] = useState(null);
